@@ -3,16 +3,24 @@ package devinotele
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 )
 
-const API_URL = "https://integrationapi.net/rest/v2/"
+const (
+	API_URL = "https://integrationapi.net/rest/v2/"
+)
 
 type DevinoTele struct {
-	login    string
-	password string
+	Login    string
+	Password string
+}
+
+type ErrorResponse struct {
+	Code int    `json:"Code"`
+	Desc string `json:"Desc"`
 }
 
 func NewDevinoTele(login string, password string) (*DevinoTele, error) {
@@ -21,8 +29,8 @@ func NewDevinoTele(login string, password string) (*DevinoTele, error) {
 	}
 
 	m := DevinoTele{}
-	m.login = login
-	m.password = password
+	m.Login = login
+	m.Password = password
 
 	return &m, nil
 }
@@ -34,8 +42,8 @@ func (m *DevinoTele) SendSms(from string, to string, text string) (string, error
 
 	resp, err := http.PostForm(API_URL+"/Sms/Send",
 		url.Values{
-			"Login":              {m.login},
-			"Password":           {m.password},
+			"Login":              {m.Login},
+			"Password":           {m.Password},
 			"SourceAddress":      {from},
 			"DestinationAddress": {to},
 			"Data":               {text},
@@ -61,8 +69,16 @@ func (m *DevinoTele) SendSms(from string, to string, text string) (string, error
 
 		return msgId[0], nil
 	case 400:
+		var response ErrorResponse
+		err := json.Unmarshal(body, &response)
+
+		if err != nil {
+			return "", err
+		}
+
+		return "", errors.New(fmt.Sprintf("Error: %d %s", response.Code, response.Desc))
 	case 500:
-		return "", errors.New("Error making request to API")
+		return "", errors.New("Internal Server Error")
 	}
 
 	return "", nil
