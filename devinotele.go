@@ -3,7 +3,6 @@ package devinotele
 import (
 	"encoding/json"
 	"errors"
-	_ "fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -28,7 +27,10 @@ func NewDevinoTele(login string, password string) (*DevinoTele, error) {
 	return &m, nil
 }
 
-func (m *DevinoTele) SendSms(from string, to string, text string) ([]string, error) {
+func (m *DevinoTele) SendSms(from string, to string, text string) (string, error) {
+	if from == "" || to == "" || text == "" {
+		return "", errors.New("Arguments can not be empty")
+	}
 
 	resp, err := http.PostForm(API_URL+"/Sms/Send",
 		url.Values{
@@ -41,15 +43,27 @@ func (m *DevinoTele) SendSms(from string, to string, text string) ([]string, err
 	)
 
 	if err != nil {
-		return []string{}, err
+		return "", err
 	}
 
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 
-	var messageIds []string
-	json.Unmarshal(body, &messageIds)
+	switch resp.StatusCode {
+	case 200:
+		var msgId []string
+		err := json.Unmarshal(body, &msgId)
 
-	return messageIds, nil
+		if err != nil {
+			return "", err
+		}
+
+		return msgId[0], nil
+	case 400:
+	case 500:
+		return "", errors.New("Error making request to API")
+	}
+
+	return "", nil
 }
