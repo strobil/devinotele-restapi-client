@@ -10,7 +10,12 @@ import (
 )
 
 const (
-	API_URL = "https://integrationapi.net/rest/v2/"
+	ApiUrl = "https://integrationapi.net/rest/v2/"
+)
+
+const (
+	DeliveryTypeSms = 1
+	DeliveryTypeViber = 2
 )
 
 type DevinoTele struct {
@@ -35,12 +40,23 @@ func NewDevinoTele(login string, password string) (*DevinoTele, error) {
 	return &m, nil
 }
 
-func (m *DevinoTele) SendSms(from string, to string, text string) (string, error) {
+func (m *DevinoTele) SendMessage(from string, to string, text string, deliveryType int) (string, error) {
 	if from == "" || to == "" || text == "" {
-		return "", errors.New("Arguments can not be empty")
+		return "", errors.New("arguments can not be empty")
 	}
 
-	resp, err := http.PostForm(API_URL+"/Sms/Send",
+	urlPart := ""
+
+	switch deliveryType {
+	case DeliveryTypeSms:
+		urlPart = "/Sms/Send"
+	case DeliveryTypeViber:
+		urlPart = "/Viber/Send"
+	default:
+		return "", errors.New("invalid delivery type")
+	}
+
+	resp, err := http.PostForm(ApiUrl+urlPart,
 		url.Values{
 			"Login":              {m.Login},
 			"Password":           {m.Password},
@@ -78,7 +94,7 @@ func (m *DevinoTele) SendSms(from string, to string, text string) (string, error
 
 		return "", errors.New(fmt.Sprintf("Error: %d %s", response.Code, response.Desc))
 	case 500:
-		return "", errors.New("Internal Server Error")
+		return "", errors.New("internal Server Error")
 	}
 
 	return "", nil

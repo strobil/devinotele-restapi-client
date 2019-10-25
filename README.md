@@ -1,1 +1,1 @@
-# devinotele-restapi-client
+# sms-restapi-go
