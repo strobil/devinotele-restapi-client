@@ -14,8 +14,8 @@ const (
 )
 
 const (
-	DeliveryTypeSms = 1
-	DeliveryTypeViber = 2
+	DeliveryMethodSms = 0
+	DeliveryMethodViber = 1
 )
 
 type DevinoTele struct {
@@ -48,9 +48,9 @@ func (m *DevinoTele) SendMessage(from string, to string, text string, deliveryTy
 	urlPart := ""
 
 	switch deliveryType {
-	case DeliveryTypeSms:
+	case DeliveryMethodSms:
 		urlPart = "/Sms/Send"
-	case DeliveryTypeViber:
+	case DeliveryMethodViber:
 		urlPart = "/Viber/Send"
 	default:
 		return "", errors.New("invalid delivery type")
@@ -92,9 +92,9 @@ func (m *DevinoTele) SendMessage(from string, to string, text string, deliveryTy
 			return "", err
 		}
 
-		return "", errors.New(fmt.Sprintf("Error: %d %s", response.Code, response.Desc))
+		return "", errors.New(fmt.Sprintf("error code: %d description: %s", response.Code, response.Desc))
 	case 500:
-		return "", errors.New("internal Server Error")
+		return "", errors.New("internal server error")
 	}
 
 	return "", nil
